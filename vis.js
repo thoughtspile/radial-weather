@@ -21,17 +21,26 @@
     }
 
     var monthGrid = function(svg, r) {
+        var months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            .reduce(function(acc, days) {
+                acc.push(_.last(acc) + days);
+                return acc;
+            }, [0])
+        var deg = d3.scale.linear()
+            .domain([0, _.last(months)])
+            .range([-90, 270]);
+        console.log(months, deg(months[0]))
         var ga = svg.append("g")
             .attr("class", "a axis")
           .selectAll("g")
-            .data(d3.range(0, 360, 30))
+            .data(months.slice(0, -1))
           .enter().append("g")
-            .attr("transform", function(d) { return "rotate(" + -d + ")"; });
+            .attr("transform", function(d) { return "rotate(" + deg(d) + ")"; });
         ga.append("line")
-            .attr("x1", r.range()[0])
-            .attr("x2", r.range()[1])
+            .attr("x1", r(-20))
+            .attr("x2", r(20))
             .attr('opacity', function(dummy, i) {
-                return (i - 1) % 3 === 0? .5: .2;
+                return (i + 1) % 3 === 0? .3: .15;
             });
     }
 
@@ -39,17 +48,46 @@
         var gr = svg.append("g")
             .attr("class", "r axis")
           .selectAll("g")
-            .data([-20, 0, 20, r.domain()[1]])
+            .data([-20, 0, 20])
           .enter().append("g");
         gr.append("circle")
             .attr("r", r)
-            .attr('opacity', .2);
+            .attr('opacity', .15)
         gr.append("text")
             .attr("y", function(d) { return -r(d); })
             .attr("transform", "translate(15, -4) rotate(0)")
             .style("text-anchor", "middle")
+            .attr('opacity', '.4')
             .text(function(d) { return d; });
     };
+
+    var tempGrad = function(svg) {
+        var grad = svg.append('radialGradient')
+            .attr('id', 'g1')
+            .attr('gradientUnits', 'userSpaceOnUse')
+            .attr('cx', 0).attr('cy', 0)
+            .attr('r', r(thigh));
+
+        grad.append('stop')
+            .attr('offset', r(-20) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'blue');
+        grad.append('stop')
+            .attr('offset', r(-20) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'lightblue');
+        grad.append('stop')
+            .attr('offset', r(0) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'lightblue');
+        grad.append('stop')
+            .attr('offset', r(0) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'orange');
+        grad.append('stop')
+            .attr('offset', r(20) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'orange');
+        grad.append('stop')
+            .attr('offset', r(20) / (r(thigh) - r(tlow)))
+            .attr('stop-color', 'orangered');
+
+    }
 
 
     var mapElStyle = window.getComputedStyle(document.getElementById('map'));
@@ -62,17 +100,27 @@
         .append('g')
         .attr('transform', 'translate(' + w/2 + ',' + h/2 + ')');
 
-    // mskt = mskt.filter((dumm, i) => i % 30 == 0)
+    var dateFmt = d3.time.format("%Y-%m-%d");
+    mskt = d3.nest()
+        .key(function(rec) {
+            return rec.time.substr(0, 10);
+        })
+        .rollup(function(times) {
+            return d3.mean(times, function(rec) { return rec.temp || 0 });
+        })
+        .entries(mskt)
+        .map(function(rec) {
+            return {
+                time: dateFmt.parse(rec.key),
+                temp: rec.values
+            };
+        });
 
-    _.each(mskt, function(rec) { rec.time = Date.parse(rec.time); });
-    var start = _.min(mskt, 'time').time;
-    var end = _.max(mskt, 'time').time;
-    console.log((end-start) / 3600 / 24 / 365 / 1000);
-    _.each(mskt, function(rec) {
-        rec.time = (rec.time - start) / 3600 / 24 / 365 / 1000 * Math.PI * 2;
-    });
+    var times = d3.extent(mskt, function(rec) {return rec.time; });
+    var ang = d3.scale.linear()
+        .domain(times)
+        .range([0, (times[1] - times[0]) / 3600 / 24 / 365 / 1000 * Math.PI * 2]);
 
-    mskt = mskt.filter(rec => !isNaN(rec.temp) && !isNaN(rec.time))
     var tlow = _.min(mskt, 'temp').temp;
     var thigh = _.max(mskt, 'temp').temp;
     var r = d3.scale.linear()
@@ -80,34 +128,17 @@
         .range([0, Math.min(w, h) / 2]);
 
     var plot = d3.svg.line.radial()
-        .angle(function(pt) { return pt.time })
+        .angle(function(pt) { return ang(pt.time) })
         .radius(function(pt) { return r(pt.temp); })
-        .interpolate(movingAvg(120));
+        .interpolate(movingAvg(4));
 
-    var grad = svg.append('radialGradient')
-        .attr('id', 'g1')
-        .attr('gradientUnits', 'userSpaceOnUse')
-        .attr('cx', 0).attr('cy', 0)
-        .attr('r', r(thigh));
-    grad.append('stop')
-        .attr('offset', r(0) / (r(thigh) - r(tlow)))
-        .attr('stop-color', 'lightblue');
-    grad.append('stop')
-        .attr('offset', r(0) / (r(thigh) - r(tlow)))
-        .attr('stop-color', 'orange');
-    grad.append('stop')
-        .attr('offset', r(20) / (r(thigh) - r(tlow)))
-        .attr('stop-color', 'orange');
-    grad.append('stop')
-        .attr('offset', r(20) / (r(thigh) - r(tlow)))
-        .attr('stop-color', 'orangered');
+    tempGrad(svg);
+    monthGrid(svg, r);
+    tempGrid(svg, r);
 
     svg.append("path")
         .datum(mskt)
         .attr("class", "line")
         .style('stroke', 'url(#g1)')
         .attr("d", plot);
-
-    monthGrid(svg, r);
-    tempGrid(svg, r);
 // }());

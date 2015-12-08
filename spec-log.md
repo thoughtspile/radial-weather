@@ -1,0 +1,32 @@
+- plot data radially, with period for angle
+- aggregate daily data to combat the daily cycles. can use:
+    - min / max -- generally, any quantile
+    - day / night / all-day average -- generally, over [T_0, T_1]
+- apply moving average
+- reduce detail (every n-th)
+- graph with no context looks like a circle
+    - add origin
+    - add reference circle at 0
+    - add several reference circles
+    - color by categories
+- untangle different years with spiral map
+    - done in spiral-values, looks terrible
+    - try color grouping
+- bin weather on a given day of year -- generally, over [D_0, D_1]
+    - normalize number of observations when little data
+    - use quantiles when data abundant
+    - opacity as distance from mean / median, stops at observations (steep gradient)
+    - mean line + confidence band
+    - mean line only
+- once we have categorized and binned the data, we can abstract over the values
+    - stacked histogram: percentage of observations by category in a bin
+    - spiral map
+    - interpolate color
+    - bin color = most frequent category (less detail)
+- cluster days into meaningful seasons
+    - user-defined number of seasons
+    - a brief characteristic for each one
+    - clear or fuzzy border between seasons
+- cloudiness, humidity and rain amount can be plotted similarly in bands
+- maybe batch atmospheric conditions
+- tackling 2D wind would be tricky, but may attempt
