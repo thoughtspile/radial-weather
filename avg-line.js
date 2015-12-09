@@ -111,7 +111,7 @@
             return rec.time.substr(0, 10);
         })
         .rollup(function(times) {
-            return d3.mean(times, function(rec) { return rec.wet/3-30 || 0 });
+            return d3.mean(times, function(rec) { return rec.temp || 0 });
         })
         .entries(mskt)
         .map(unnest);

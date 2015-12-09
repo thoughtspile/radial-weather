@@ -89,12 +89,6 @@
 
     }
 
-    var unnest = function(rec) {
-        return {
-            time: rec.key,
-            temp: rec.values
-        };
-    };
 
     var mapElStyle = window.getComputedStyle(document.getElementById('map'));
     var w = parseFloat(mapElStyle.width);
@@ -106,30 +100,21 @@
         .append('g')
         .attr('transform', 'translate(' + w/2 + ',' + h/2 + ')');
 
+    var dateFmt = d3.time.format("%Y-%m-%d");
     mskt = d3.nest()
         .key(function(rec) {
             return rec.time.substr(0, 10);
         })
         .rollup(function(times) {
-            return d3.mean(times, function(rec) { return rec.wet/3-30 || 0 });
+            return d3.mean(times, function(rec) { return rec.temp || 0 });
         })
         .entries(mskt)
-        .map(unnest);
-
-    mskt = d3.nest()
-        .key(function(rec) {
-            return rec.time.substr(5, 10);
-        })
-        .rollup(function(dayInYrs) {
-            return d3.mean(dayInYrs, function(rec) {
-                return rec.temp || 0
-            });
-        })
-        .entries(mskt)
-        .map(unnest);
-
-    var dateFmt = d3.time.format("%m-%d");
-    mskt.forEach(function(rec) { rec.time = dateFmt.parse(rec.time); });
+        .map(function(rec) {
+            return {
+                time: dateFmt.parse(rec.key),
+                temp: rec.values
+            };
+        });
 
     var times = d3.extent(mskt, function(rec) {return rec.time; });
     var ang = d3.scale.linear()
@@ -142,18 +127,26 @@
         .domain([tlow, thigh])
         .range([0, Math.min(w, h) / 2]);
 
-    var plot = d3.svg.line.radial()
-        .angle(function(pt) { return ang(pt.time) })
-        .radius(function(pt) { return r(pt.temp); })
-        .interpolate(movingAvg(4));
+    var rnorm = d3.scale.linear()
+        .domain([tlow, thigh])
+        .range([0, 1]);
+    var tnorm = d3.scale.linear()
+        .domain(times)
+        .range([0, 1 * (times[1] - times[0]) / (365 * 24 * 10000000)]);
 
-    tempGrad(svg);
     monthGrid(svg, r);
     tempGrid(svg, r);
+
+    var plot = d3.svg.line.radial()
+        .angle(function(pt) { return ang(pt.time) })
+        .radius(function(pt) {
+            return 75 * (rnorm(0) + tnorm(pt.time))
+        })
+        .interpolate(movingAvg(4));
 
     svg.append("path")
         .datum(mskt)
         .attr("class", "line")
-        .style('stroke', 'url(#g1)')
+        .attr('stroke', d3.scale.category10().domain([-10, 10, 20]))
         .attr("d", plot);
 // }());
