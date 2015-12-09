@@ -29,7 +29,6 @@
         var deg = d3.scale.linear()
             .domain([0, _.last(months)])
             .range([-90, 270]);
-        console.log(months, deg(months[0]))
         var ga = svg.append("g")
             .attr("class", "a axis")
           .selectAll("g")
@@ -37,8 +36,9 @@
           .enter().append("g")
             .attr("transform", function(d) { return "rotate(" + deg(d) + ")"; });
         ga.append("line")
-            .attr("x1", r(-20))
-            .attr("x2", r(20))
+            .attr("x1", 100)
+            .attr("x2", Math.min(w,h) / 2)
+            .attr('stroke', 'black')
             .attr('opacity', function(dummy, i) {
                 return (i + 1) % 3 === 0? .3: .15;
             });
@@ -89,12 +89,6 @@
 
     }
 
-    var unnest = function(rec) {
-        return {
-            time: rec.key,
-            temp: rec.values
-        };
-    };
 
     var mapElStyle = window.getComputedStyle(document.getElementById('map'));
     var w = parseFloat(mapElStyle.width);
@@ -106,30 +100,21 @@
         .append('g')
         .attr('transform', 'translate(' + w/2 + ',' + h/2 + ')');
 
+    var dateFmt = d3.time.format("%Y-%m-%d");
     mskt = d3.nest()
         .key(function(rec) {
             return rec.time.substr(0, 10);
         })
         .rollup(function(times) {
-            return d3.mean(times, function(rec) { return rec.wet/3-30 || 0 });
+            return d3.mean(times, function(rec) { return rec.temp || 0 });
         })
         .entries(mskt)
-        .map(unnest);
-
-    mskt = d3.nest()
-        .key(function(rec) {
-            return rec.time.substr(5, 10);
-        })
-        .rollup(function(dayInYrs) {
-            return d3.mean(dayInYrs, function(rec) {
-                return rec.temp || 0
-            });
-        })
-        .entries(mskt)
-        .map(unnest);
-
-    var dateFmt = d3.time.format("%m-%d");
-    mskt.forEach(function(rec) { rec.time = dateFmt.parse(rec.time); });
+        .map(function(rec) {
+            return {
+                time: dateFmt.parse(rec.key),
+                temp: rec.values
+            };
+        });
 
     var times = d3.extent(mskt, function(rec) {return rec.time; });
     var ang = d3.scale.linear()
@@ -138,22 +123,33 @@
 
     var tlow = _.min(mskt, 'temp').temp;
     var thigh = _.max(mskt, 'temp').temp;
+
     var r = d3.scale.linear()
-        .domain([tlow, thigh])
-        .range([0, Math.min(w, h) / 2]);
+        .domain(times)
+        .range([Math.min(w, h) / 4, Math.min(w, h) / 2]);
 
     var plot = d3.svg.line.radial()
         .angle(function(pt) { return ang(pt.time) })
-        .radius(function(pt) { return r(pt.temp); })
-        .interpolate(movingAvg(4));
+        .radius(function(pt) {
+            return r(pt.time)
+        })
+        // .interpolate(movingAvg(4));
 
-    tempGrad(svg);
+    var segments = mskt.slice(1).map(function(pt, i) {
+        return [mskt[i], mskt[i + 1]];
+    });
+
+    var palette = d3.scale.quantize()
+        .domain([-40, 0, 40])
+        .range(['blue', 'lightblue', 'orange', 'red']);
+
+    svg.selectAll("path")
+        .data(segments)
+        .enter().append('path')
+            .attr("class", "line")
+            .attr("d", plot)
+            .attr('stroke-width', r(365*24 * 3600000) - r(0))
+            .attr('stroke', function(pt) { return palette(pt[0].temp); })
+
     monthGrid(svg, r);
-    tempGrid(svg, r);
-
-    svg.append("path")
-        .datum(mskt)
-        .attr("class", "line")
-        .style('stroke', 'url(#g1)')
-        .attr("d", plot);
 // }());
