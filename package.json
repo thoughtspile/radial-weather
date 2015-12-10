@@ -1,0 +1,20 @@
+{
+  "name": "donut-charts",
+  "version": "0.0.5",
+  "description": "Radial time series in d3",
+  "main": "avg-line.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "git add * & git add -u & git commit -m \"deploy\" & git checkout gh-pages & git merge master & git push origin gh-pages & git checkout master"  
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thoughtspile/radial-weather.git"
+  },
+  "author": "Vladimir Klepov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thoughtspile/radial-weather/issues"
+  },
+  "homepage": "https://github.com/thoughtspile/radial-weather#readme"
+}
