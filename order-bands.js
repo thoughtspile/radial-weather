@@ -51,62 +51,48 @@
     }
 
     var radius = Math.min(w, h) / 2;
-    var ratio = .9;
+    var ratio = .2;
     var inner = ratio * radius;
-    var cats = ['white', 'blue', 'lightblue', 'orange', 'red'];
 
-    var palette = d3.scale.quantize()
-        .domain([-40, 0, 40])
-        .range(cats.slice(1));
 
     mskt = dailyMean(mskt);
-    mskt = binCatsDaily(mskt, palette)
-        .map(function(day) {
-            day.distr = _.mapValues(_.countBy(day.temp), function(count) {
-                return count / day.temp.length;
-            });
-            cats.forEach(function(cat) {
-                day.distr[cat] = day.distr[cat] || 0;
-            });
-            cats.slice(1).forEach(function(cat, i) {
-                day.distr[cat] += day.distr[cats[i]] || 0;
-            })
-            return day;
-        });
-    // console.log(_.map(mskt, 'distr.lightblue'));
+
+    var tlow = _.min(mskt, 'temp').temp;
+    var thigh = _.max(mskt, 'temp').temp;
+    var r = d3.scale.linear()
+        .domain([tlow, thigh])
+        .range([inner, radius]);
+
+    mskt = binOrderDaily(mskt);
 
     var dateFmt = d3.time.format("%m-%d");
     mskt.forEach(function(rec) { rec.time = dateFmt.parse(rec.time); });
-    // console.log(_.map(mskt, 'time'));
-
     var times = d3.extent(mskt, function(rec) {return rec.time; });
     var ang = d3.scale.linear()
         .domain(times)
         .range([0, Math.PI * 2]);
 
-    var r = d3.scale.linear()
-        .domain([0, 1])
-        .range([inner, radius]);
-
-    var plot = function(cat) {
+    var plot = function(i) {
         return d3.svg.line.radial()
             .angle(function(pt) { return ang(pt.time) })
-            .radius(function(pt) { return r(pt.distr[cat]); })
+            .radius(function(pt) { return r(pt.temp[i]); })
             .interpolate('basis');
+            // .interpolate(movingAvg(4));
     };
 
+    tempGrad(svg, r, inner, radius);
+    monthGrid(svg, inner, radius);
+    tempGrid(svg, r);
+
+    _.pull(mskt, _.min(mskt, 'temp.length'));
+    mskt = _.sortBy(mskt, 'time');
+    var bands = _.max(mskt, 'temp.length').temp.length;
 
     svg.selectAll("path")
-        .data(cats.reverse())
+        .data(_.range(bands))
         .enter()
             .append('path')
-            .attr("class", "line")
-            .style('fill', _.identity)
-            .style('stroke', _.identity)
-            // .style('stroke-width', '1px')
-            // .datum(_.sortBy(mskt, 'time'))
-            .attr("d", function(cat) {
-                return plot(cat)(_.sortBy(mskt, 'time'));
-            });
-    monthGrid(svg, inner, radius);
+                .attr("class", "line")
+                .style('stroke', 'url(#g1)')
+                .attr("d", function(i) { return plot(i)(mskt); });
 // }());
