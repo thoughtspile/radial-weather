@@ -7,6 +7,7 @@
           .enter().append("g");
         gr.append("circle")
             .attr("r", r)
+            .style('stroke', 'black')
             .attr('opacity', .15)
         gr.append("text")
             .attr("y", function(d) { return -r(d); })
@@ -21,10 +22,10 @@
             .attr('id', 'g1')
             .attr('gradientUnits', 'userSpaceOnUse')
             .attr('cx', 0).attr('cy', 0)
-            .attr('r', r(thigh));
+            .attr('r', outer);
 
         var stopOffset = function(temp) {
-            return (scale(temp) - inner) / (outer - inner);
+            return scale(temp) / outer;
         };
 
         var bands = [
@@ -74,10 +75,11 @@
 
     var plot = function(i) {
         return d3.svg.line.radial()
-            .angle(function(pt) { return ang(pt.time) })
-            .radius(function(pt) { return r(pt.temp[i]); })
+            .angle(function(pt) { return ang(pt.time); })
+            .radius(function(pt) {
+                return r(pt.temp.length > i? pt.temp[i]: _.last(pt.temp));
+            })
             .interpolate('basis');
-            // .interpolate(movingAvg(4));
     };
 
     tempGrad(svg, r, inner, radius);
@@ -94,5 +96,7 @@
             .append('path')
                 .attr("class", "line")
                 .style('stroke', 'url(#g1)')
-                .attr("d", function(i) { return plot(i)(mskt); });
+                .attr("d", function(i) {
+                    return plot(i)(mskt);
+                });
 // }());
