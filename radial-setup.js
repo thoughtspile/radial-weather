@@ -30,6 +30,8 @@ donuts.base = function(draw) {
         gap: -1
     };
 
+    factory.globals = {};
+
     factory.palette = d3.scale.quantize()
         .domain([-40, 0, 40])
         .range(['blue', 'lightblue', 'orange', 'red']);
@@ -77,8 +79,8 @@ donuts.baseMethods = {
     ringLayout: function(data) {
         var ang = normalizeTime(data, 2 * Math.PI);
 
-        var tlow = _.min(data, 'temp').temp;
-        var thigh = _.max(data, 'temp').temp;
+        var tlow = this.globals.tlow || _.min(data, 'temp').temp;
+        var thigh = this.globals.thigh || _.max(data, 'temp').temp;
         var r = d3.scale.linear()
             .domain([tlow, thigh])
             .range([this.config.inner, this.config.radius]);

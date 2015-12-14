@@ -113,12 +113,12 @@ var binCatsDaily = function(data, segFn, cats) {
 var binOrderDaily = function(data) {
     return d3.nest()
         .key(function(rec) {
-            return rec.time.substr(5, 10);
+            return '2012-' + rec.time.substr(5, 10);
         })
         .rollup(function(dayInYrs) {
             return _(dayInYrs).map('temp').sortBy().value();
         })
-        .entries(mskt)
+        .entries(data)
         .map(unnest);
 }
 

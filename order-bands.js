@@ -1,102 +1,41 @@
-// (function() {
-    var tempGrid = function(svg, r) {
-        var gr = svg.append("g")
-            .attr("class", "r axis")
-          .selectAll("g")
-            .data([-20, 0, 20])
-          .enter().append("g");
-        gr.append("circle")
-            .attr("r", r)
-            .style('stroke', 'black')
-            .attr('opacity', .15)
-        gr.append("text")
-            .attr("y", function(d) { return -r(d); })
-            .attr("transform", "translate(15, -4) rotate(0)")
-            .style("text-anchor", "middle")
-            .attr('opacity', '.4')
-            .text(function(d) { return d; });
-    };
+donuts.vis = (function() {
+    var factory = donuts.base(function(data) {
+        data = dailyMean(data);
+        factory.globals.tlow = d3.min(data, _.property('temp'));
+        factory.globals.thigh = d3.max(data, _.property('temp'));
+        data = binOrderDaily(data);
+        data = _.sortBy(data, 'time');
 
-    var tempGrad = function(svg, scale, inner, outer) {
-        var grad = svg.append('radialGradient')
-            .attr('id', 'g1')
-            .attr('gradientUnits', 'userSpaceOnUse')
-            .attr('cx', 0).attr('cy', 0)
-            .attr('r', outer);
+        // remove feb 29
+        _.pull(data, _.min(data, 'temp.length'));
+        var bands = _.max(data, 'temp.length').temp.length;
 
-        var stopOffset = function(temp) {
-            return scale(temp) / outer;
-        };
-
-        var bands = [
-            {temp: -100, color: 'blue'},
-            {temp: -20, color: 'blue'},
-            {temp: -20, color: 'lightblue'},
-            {temp: 0, color: 'lightblue'},
-            {temp: 0, color: 'orange'},
-            {temp: 20, color: 'orange'},
-            {temp: 20, color: 'red'},
-            {temp: 100, color: 'red'}
-        ];
-
-        grad.selectAll('stop')
-            .data(bands)
-            .enter()
-            .append('stop')
-                .attr('offset', function(band) {
-                    return stopOffset(band.temp);
+        var plot = function(i) {
+            return d3.svg.line.radial()
+                .angle(function(pt) { return ang(pt.time); })
+                .radius(function(pt) {
+                    return r(pt.temp.length > i? pt.temp[i]: _.last(pt.temp));
                 })
-                .attr('stop-color', function(band) {
-                    return band.color;
-                });
-    }
+                .interpolate('basis');
+        };
+        data = _.range(bands).map(function(cat) {
+            return data.map(function(rec) {
+                return {
+                    time: rec.time,
+                    temp: rec.temp[cat]
+                };
+            });
+        });
 
-    var radius = Math.min(w, h) / 2;
-    var ratio = .2;
-    var inner = ratio * radius;
-
-
-    mskt = dailyMean(mskt);
-
-    var tlow = _.min(mskt, 'temp').temp;
-    var thigh = _.max(mskt, 'temp').temp;
-    var r = d3.scale.linear()
-        .domain([tlow, thigh])
-        .range([inner, radius]);
-
-    mskt = binOrderDaily(mskt);
-
-    var dateFmt = d3.time.format("%m-%d");
-    mskt.forEach(function(rec) { rec.time = dateFmt.parse(rec.time); });
-    var times = d3.extent(mskt, function(rec) {return rec.time; });
-    var ang = d3.scale.linear()
-        .domain(times)
-        .range([0, Math.PI * 2]);
-
-    var plot = function(i) {
-        return d3.svg.line.radial()
-            .angle(function(pt) { return ang(pt.time); })
-            .radius(function(pt) {
-                return r(pt.temp.length > i? pt.temp[i]: _.last(pt.temp));
-            })
-            .interpolate('basis');
-    };
-
-    tempGrad(svg, r, inner, radius);
-    monthGrid(svg, inner, radius);
-    tempGrid(svg, r);
-
-    _.pull(mskt, _.min(mskt, 'temp.length'));
-    mskt = _.sortBy(mskt, 'time');
-    var bands = _.max(mskt, 'temp.length').temp.length;
-
-    svg.selectAll("path")
-        .data(_.range(bands))
-        .enter()
-            .append('path')
+        d3.select(this).selectAll("path")
+            .data(data)
+            .enter().append('path')
                 .attr("class", "line")
-                .style('stroke', 'url(#g1)')
-                .attr("d", function(i) {
-                    return plot(i)(mskt);
+                .style('stroke', 'black')
+                .attr("d", function(layer) {
+                    console.log(layer)
+                    return factory.ringLayout(layer)(layer);
                 });
-// }());
+    });
+    return factory;
+}());

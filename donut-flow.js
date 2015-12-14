@@ -21,6 +21,9 @@ donuts.vis = (function() {
             };
         });
 
+        factory.globals.tlow = 0;
+        factory.globals.thigh = 1;
+
         svg.selectAll("path")
             .data(data.reverse())
             .enter()
@@ -29,7 +32,6 @@ donuts.vis = (function() {
                 .style('fill', _.property('color'))
                 .style('stroke', _.property('color'))
                 .attr("d", function(cat) {
-                    console.log(cat)
                     return factory.ringLayout(cat.data)(cat.data);
                 });
     });
