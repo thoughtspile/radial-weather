@@ -1,4 +1,4 @@
-// (function() {
+donuts.vis = (function() {
     var tempGrid = function(svg, r) {
         var gr = svg.append("g")
             .attr("class", "r axis")
@@ -50,40 +50,44 @@
                 });
     }
 
-    var radius = Math.min(w, h) / 2;
-    var ratio = .2;
-    var inner = ratio * radius;
 
-    mskt = dailyMean(mskt);
-    mskt = binMeanDaily(mskt);
+    function draw(data) {
+        var svg = d3.select(this);
 
-    var dateFmt = d3.time.format("%m-%d");
-    mskt.forEach(function(rec) { rec.time = dateFmt.parse(rec.time); });
+        data = dailyMean(data);
+        data = binMeanDaily(data);
+        data.forEach(function(rec) {
+            rec.time = dateFmt.parse(rec.time);
+        });
 
-    var times = d3.extent(mskt, function(rec) {return rec.time; });
-    var ang = d3.scale.linear()
-        .domain(times)
-        .range([0, Math.PI * 2]);
+        var times = d3.extent(data, function(rec) { return rec.time; });
+        var ang = d3.scale.linear()
+            .domain(times)
+            .range([0, Math.PI * 2]);
 
-    var tlow = _.min(mskt, 'temp').temp;
-    var thigh = _.max(mskt, 'temp').temp;
-    var r = d3.scale.linear()
-        .domain([tlow, thigh])
-        .range([inner, radius]);
+        var tlow = _.min(data, 'temp').temp;
+        var thigh = _.max(data, 'temp').temp;
+        var r = d3.scale.linear()
+            .domain([tlow, thigh])
+            .range([config.inner, config.radius]);
 
-    var plot = d3.svg.line.radial()
-        .angle(function(pt) { return ang(pt.time) })
-        .radius(function(pt) { return r(pt.temp); })
-        .interpolate('basis');
-        // .interpolate(movingAvg(4));
+        var plot = d3.svg.line.radial()
+            .angle(function(pt) { return ang(pt.time) })
+            .radius(function(pt) { return r(pt.temp); })
+            .interpolate('basis');
+            // .interpolate(movingAvg(4));
 
-    tempGrad(svg, r, inner, radius);
-    monthGrid(svg, inner, radius);
-    tempGrid(svg, r);
+        // tempGrad(svg, r, config.inner, config.radius);
+        // tempGrid(svg, r);
 
-    svg.append("path")
-        .datum(_.sortBy(mskt, 'time'))
-        .attr("class", "line")
-        .style('stroke', 'url(#g1)')
-        .attr("d", plot);
-// }());
+        svg.append("path")
+            .datum(_.sortBy(data, 'time'))
+            .attr("class", "line")
+            .style('stroke', 'url(#g1)')
+            .attr("d", plot);
+    };
+
+    var factory = donuts.base();
+    factory.vis = draw;
+    return factory;
+}());

@@ -9,6 +9,7 @@ var unnest = function(rec) {
     };
 };
 
+
 var movingAvg = function(n) {
     return function (points) {
         points = points.map(function(each, index, array) {
@@ -47,6 +48,7 @@ var dailyMean = function(data) {
         });
 }
 
+
 var compoundSegments = function(data, segFn) {
     return data.reduce(function(segmented, pt, i) {
         var last = _.last(_.last(segmented));
@@ -69,6 +71,7 @@ var atomicSegments = function(data) {
         return segmented;
     }, [[data[0]]]);
 }
+
 
 var binMeanDaily = function(data, segFn) {
     return d3.nest()
@@ -108,4 +111,20 @@ var binOrderDaily = function(data) {
         })
         .entries(mskt)
         .map(unnest);
+}
+
+
+var normalizeTime = function(data, scale) {
+    scale = scale || 1;
+    data.forEach(function(rec) {
+        rec.time = dateFmt.parse(rec.time);
+    });
+    var times = d3.extent(data, function(rec) {
+        return rec.time;
+    });
+    var periods = (times[1] - times[0]) / period;
+    data.forEach(function(rec) {
+        rec.time = (rec.time - times[0]) / (times[1] - times[0]) * scale * periods;
+    });
+    return data;
 }
