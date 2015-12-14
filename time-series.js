@@ -1,10 +1,9 @@
 var period = 365 * 24 * 3600000;
-var dateFmt = d3.time.format("%Y-%m-%d");
 
 
 var unnest = function(rec) {
     return {
-        time: rec.key,
+        time: (rec.key),
         temp: rec.values
     };
 };
@@ -40,12 +39,7 @@ var dailyMean = function(data) {
             return d3.mean(times, function(rec) { return rec.temp || 0 });
         })
         .entries(data)
-        .map(function(rec) {
-            return {
-                time: rec.key,
-                temp: rec.values
-            };
-        });
+        .map(unnest);
 }
 
 
@@ -76,29 +70,44 @@ var atomicSegments = function(data) {
 var binMeanDaily = function(data, segFn) {
     return d3.nest()
         .key(function(rec) {
-            return rec.time.substr(5, 10);
+            return '2012-' + rec.time.substr(5, 10);
         })
         .rollup(function(dayInYrs) {
             return d3.mean(dayInYrs, function(rec) {
                 return rec.temp || 0;
             });
         })
-        .entries(mskt)
+        .entries(data)
         .map(unnest);
 }
 
-var binCatsDaily = function(data, segFn) {
+var binCatsDaily = function(data, segFn, cats) {
     return d3.nest()
         .key(function(rec) {
-            return rec.time.substr(5, 10);
+            return '2012-' + rec.time.substr(5, 10);
         })
-        .rollup(function(dayInYrs) {
-            return dayInYrs.map(
-                function(rec) {return segFn(rec.temp);
+        .rollup(function(day) {
+            var counts = day.map(function(rec) {
+                return segFn(rec.temp);
             });
+            var distr = _.mapValues(_.countBy(counts), function(count) {
+                return count / counts.length;
+            });
+            cats.forEach(function(cat) {
+                distr[cat] = distr[cat] || 0;
+            });
+            cats.slice(1).forEach(function(cat, i) {
+                distr[cat] += distr[cats[i]];
+            });
+            return distr;
         })
-        .entries(mskt)
-        .map(unnest);
+        .entries(data)
+        .map(function(rec) {
+            return {
+                time: rec.key,
+                distr: rec.values
+            }
+        });
 }
 
 var binOrderDaily = function(data) {
@@ -114,17 +123,16 @@ var binOrderDaily = function(data) {
 }
 
 
-var normalizeTime = function(data, scale) {
-    scale = scale || 1;
-    data.forEach(function(rec) {
-        rec.time = dateFmt.parse(rec.time);
-    });
+var normalizeTime = function(data, scaledPeriod) {
+    scaledPeriod = scaledPeriod || 1;
     var times = d3.extent(data, function(rec) {
-        return rec.time;
+        return new Date(rec.time).getTime();
     });
     var periods = (times[1] - times[0]) / period;
-    data.forEach(function(rec) {
-        rec.time = (rec.time - times[0]) / (times[1] - times[0]) * scale * periods;
-    });
-    return data;
+    var scale = function(time) {
+        return (new Date(time).getTime() - times[0]) / (times[1] - times[0]) * scaledPeriod * periods;
+    };
+    scale.domain = times.slice();
+    scale.range = [0, scaledPeriod * periods];
+    return scale;
 }
