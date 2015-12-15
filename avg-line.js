@@ -4,7 +4,7 @@ donuts.ringMean = function() {
         var plot = factory.ringLayout(data);
 
         d3.select(this).selectAll('path')
-            .data(compoundSegments(data, factory.palette))
+            .data(sharpSegments(data, factory.palette))
             .enter().append("path")
                 .attr("class", "line")
                 .style('stroke', function(pt) {

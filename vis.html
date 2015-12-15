@@ -52,10 +52,11 @@
         <script>
             var svg = donutBase('map');
             var outer = Math.min(w, h) / 2;
-            var inner = .7 * outer;
-            var layout = donuts.ringMean()
+            var inner = .8 * outer;
+            var layout = donuts.ringOrders()
                 .inner(inner).outer(outer);
-            svg.datum(_.sortBy(dailyMean(mskt), 'time')).call(layout);
+            svg.datum(_.sortBy(dailyMean(mskt), 'time'))
+                .call(layout);
             // layout.drawTempGrid(svg);
             monthGrid(svg, inner, outer);
         </script>

@@ -70,11 +70,17 @@ var atomicSegments = function(data) {
 var sharpSegments = function(data, segFn) {
     var temp = compoundSegments(data, segFn);
     temp.slice(1).forEach(function(segment, i) {
-        var end = _.last(temp[i]);
-        var start = segment[0];
-        start[0] = end[1];
-        temp[i]
+        var prevSeg = temp[i];
+        var range = _.map(prevSeg.slice(-2), 'temp');
+        while (Math.abs(range[1] - range[0]) > .1) {
+            var mid = (range[1] + range[0]) / 2;
+            range[segFn(mid) == segFn(range[0])? 0: 1] = mid;
+        }
+
+        _.last(prevSeg).temp = range[0];
+        segment[0].temp = range[1];
     });
+    return temp;
 };
 
 
