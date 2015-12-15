@@ -1,6 +1,6 @@
-donuts.vis = (function() {
+donuts.ringAvg = function() {
     var factory = donuts.base(function(data) {
-        data = _.sortBy(binMeanDaily(dailyMean(data)), 'time');
+        data = binMeanDaily(data);
         var plot = factory.ringLayout(data);
 
         d3.select(this).selectAll('path')
@@ -13,4 +13,4 @@ donuts.vis = (function() {
                 .attr("d", plot);
     });
     return factory;
-}());
+};

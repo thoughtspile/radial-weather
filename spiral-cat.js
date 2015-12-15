@@ -1,6 +1,5 @@
-donuts.vis = (function() {
+donuts.spiralCats = function() {
     var factory = donuts.base(function(data) {
-        data = dailyMean(data);
         d3.select(this).selectAll("path")
             .data(compoundSegments(data, factory.palette))
             .enter().append('path')
@@ -12,4 +11,4 @@ donuts.vis = (function() {
                 });
     });
     return factory;
-}());
+};

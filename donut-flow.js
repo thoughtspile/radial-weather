@@ -1,13 +1,11 @@
-donuts.vis = (function() {
+donuts.ringFlows = function() {
     var factory = donuts.base(function(data) {
         var cats = ['white', 'blue', 'lightblue', 'orange', 'red'];
         var palette = d3.scale.quantize()
             .domain([-40, 0, 40])
             .range(cats.slice(1));
 
-        data = dailyMean(data);
         data = binCatsDaily(data, palette, cats);
-        data = _.sortBy(data, 'time');
 
         data = cats.map(function(cat) {
             return {
@@ -36,4 +34,4 @@ donuts.vis = (function() {
                 });
     });
     return factory;
-}());
+};

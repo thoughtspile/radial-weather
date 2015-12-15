@@ -39,21 +39,23 @@
         <script src="month-grid.js" charset="utf-8"></script>
         <script src="time-series.js" charset="utf-8"></script>
         <script src="radial-setup.js" charset="utf-8"></script>
-
         <script src="msk.json" charset="utf-8"></script>
-        <!-- <script src="avg-line.js" charset="utf-8"></script> -->
-        <!-- <script src="spiral-cat.js" charset="utf-8"></script> -->
+
+        <script src="avg-line.js" charset="utf-8"></script>
+        <script src="spiral-cat.js" charset="utf-8"></script>
         <script src="donut-flow.js" charset="utf-8"></script>
-        <!-- <script src="order-bands.js" charset="utf-8"></script> -->
+        <script src="order-bands.js" charset="utf-8"></script>
+
         <!-- <script src="overlap-value.js" charset="utf-8"></script> -->
         <!-- <script src="hist.js" charset="utf-8"></script> -->
+
         <script>
             var svg = donutBase('map');
-
             var outer = Math.min(w, h) / 2;
-            var inner = .2 * outer;
-            var layout = donuts.vis.inner(inner).outer(outer);
-            svg.datum(mskt).call(layout)
+            var inner = .7 * outer;
+            var layout = donuts.spiralCats()
+                .inner(inner).outer(outer);
+            svg.datum(_.sortBy(dailyMean(mskt), 'time')).call(layout);
             // layout.drawTempGrid(svg);
             monthGrid(svg, inner, outer);
         </script>

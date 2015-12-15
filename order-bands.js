@@ -1,10 +1,8 @@
-donuts.vis = (function() {
+donuts.ringOrders = function() {
     var factory = donuts.base(function(data) {
-        data = dailyMean(data);
         factory.globals.tlow = d3.min(data, _.property('temp'));
         factory.globals.thigh = d3.max(data, _.property('temp'));
         data = binOrderDaily(data);
-        data = _.sortBy(data, 'time');
 
         // remove feb 29
         _.pull(data, _.min(data, 'temp.length'));
@@ -38,4 +36,4 @@ donuts.vis = (function() {
                 });
     });
     return factory;
-}());
+};
