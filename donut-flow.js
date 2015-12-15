@@ -7,18 +7,6 @@ donuts.ringFlows = function() {
 
         data = binCatsDaily(data, palette, cats);
 
-        data = cats.map(function(cat) {
-            return {
-                color: cat,
-                data: data.map(function(rec) {
-                    return {
-                        time: rec.time,
-                        temp: rec.distr[cat]
-                    };
-                })
-            };
-        });
-
         factory.globals.tlow = 0;
         factory.globals.thigh = 1;
 

@@ -1,4 +1,5 @@
 var period = 365 * 24 * 3600000;
+var leapPrefix = '2012-';
 
 
 var unnest = function(rec) {
@@ -66,60 +67,78 @@ var atomicSegments = function(data) {
     }, [[data[0]]]);
 }
 
+var sharpSegments = function(data, segFn) {
+    var temp = compoundSegments(data, segFn);
+    temp.slice(1).forEach(function(segment, i) {
+        var end = _.last(temp[i]);
+        var start = segment[0];
+        start[0] = end[1];
+        temp[i]
+    });
+};
 
-var binMeanDaily = function(data, segFn) {
-    return d3.nest()
-        .key(function(rec) {
-            return '2012-' + rec.time.substr(5, 10);
-        })
+
+var yearless = d3.nest().key(function(rec) {
+    return leapPrefix + rec.time.substr(5, 10);
+});
+
+var binMeanDaily = function(data) {
+    return yearless
         .rollup(function(dayInYrs) {
-            return d3.mean(dayInYrs, function(rec) {
-                return rec.temp || 0;
-            });
+            return d3.mean(dayInYrs, _.property('temp'));
         })
         .entries(data)
         .map(unnest);
 }
 
 var binCatsDaily = function(data, segFn, cats) {
-    return d3.nest()
-        .key(function(rec) {
-            return '2012-' + rec.time.substr(5, 10);
-        })
+    data = yearless
         .rollup(function(day) {
-            var counts = day.map(function(rec) {
+            var counts = _.countBy(day.map(function(rec) {
                 return segFn(rec.temp);
-            });
-            var distr = _.mapValues(_.countBy(counts), function(count) {
-                return count / counts.length;
-            });
-            cats.forEach(function(cat) {
-                distr[cat] = distr[cat] || 0;
-            });
-            cats.slice(1).forEach(function(cat, i) {
-                distr[cat] += distr[cats[i]];
+            }));
+            var distr = {};
+            cats.forEach(function(cat, i) {
+                distr[cat] = counts[cat] / day.length || 0;
+                distr[cat] += distr[cats[i - 1]] || 0;
             });
             return distr;
         })
-        .entries(data)
-        .map(function(rec) {
-            return {
-                time: rec.key,
-                distr: rec.values
-            }
-        });
+        .entries(data);
+    return cats.map(function(cat) {
+        return {
+            color: cat,
+            data: data.map(function(rec) {
+                return {
+                    time: rec.key,
+                    temp: rec.values[cat]
+                };
+            })
+        };
+    });
 }
 
 var binOrderDaily = function(data) {
-    return d3.nest()
-        .key(function(rec) {
-            return '2012-' + rec.time.substr(5, 10);
-        })
+    data = yearless
         .rollup(function(dayInYrs) {
             return _(dayInYrs).map('temp').sortBy().value();
         })
-        .entries(data)
-        .map(unnest);
+        .entries(data);
+
+    // remove feb 29
+    _.pull(data, _.min(data, 'temp.length'));
+
+    var bandCount = d3.max(data, _.property('values.length'));
+
+    // restructure
+    return _.range(bandCount).map(function(cat) {
+        return data.map(function(rec) {
+            return {
+                time: rec.key,
+                temp: rec.values[cat]
+            };
+        });
+    });
 }
 
 

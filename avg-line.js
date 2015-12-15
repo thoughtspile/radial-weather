@@ -1,4 +1,4 @@
-donuts.ringAvg = function() {
+donuts.ringMean = function() {
     var factory = donuts.base(function(data) {
         data = binMeanDaily(data);
         var plot = factory.ringLayout(data);

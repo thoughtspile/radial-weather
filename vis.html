@@ -53,7 +53,7 @@
             var svg = donutBase('map');
             var outer = Math.min(w, h) / 2;
             var inner = .7 * outer;
-            var layout = donuts.spiralCats()
+            var layout = donuts.ringMean()
                 .inner(inner).outer(outer);
             svg.datum(_.sortBy(dailyMean(mskt), 'time')).call(layout);
             // layout.drawTempGrid(svg);
