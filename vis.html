@@ -17,9 +17,18 @@
             #map {
                 position: absolute;
                 right: 0;
+                top: 0;
                 width: 100%;
-                height: 100%;
+                height: 90%;
                 background: white;
+            }
+            #control {
+                position: absolute;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                height: 10%;
+                background: beige;
             }
             #map path, #map circle, #map .axis {
                 fill: none;
@@ -32,6 +41,15 @@
     </head>
     <body>
         <div id = 'map'></div>
+        <div id = 'control'>
+            <input type = 'number' class = 'ui' id = 'bin-size' value = '1'></input>
+            <select class = 'ui' id = 'vis-type'>
+                <option value = 'ringMean' selected>mean</option>
+                <option value = 'ringOrders'>order</option>
+                <option value = 'spiralCats'>categorical spiral</option>
+                <option value = 'ringFlows'>categorical flow</option>
+            </select>
+        </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js" charset="utf-8"></script>
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
@@ -39,6 +57,7 @@
         <script src="month-grid.js" charset="utf-8"></script>
         <script src="time-series.js" charset="utf-8"></script>
         <script src="radial-setup.js" charset="utf-8"></script>
+        <script src="tempGrad.js" charset="utf-8"></script>
         <script src="msk.json" charset="utf-8"></script>
 
         <script src="ring.js" charset="utf-8"></script>
@@ -51,17 +70,33 @@
         <!-- <script src="hist.js" charset="utf-8"></script> -->
 
         <script>
-            var svg = donutBase('map');
-            var outer = Math.min(w, h) / 2;
-            var inner = .2 * outer;
-            var layout = donuts.ringOrders()
-                .inner(inner).outer(outer);
-            mskt = dailyMean(mskt);
-            mskt = _.sortBy(mskt, 'time');
-            // mskt = stepMeans(mskt, 7);
-            svg.datum(mskt).call(layout);
-            // layout.drawTempGrid(svg);
-            monthGrid(svg, inner, outer);
+            function rebuild(type, binSize) {
+                window.binSize = binSize;
+                d3.selectAll('svg').remove();
+                var svg = donutBase('map');
+                var outer = Math.min(w, h) / 2;
+                var inner = .2 * outer;
+                var layout = donuts[type]()
+                    .inner(inner).outer(outer);
+
+                mskt = dailyMean(mskt);
+                svg.datum(mskt).call(layout);
+                // layout.drawTempGrid(svg);
+                monthGrid(svg, inner, outer);
+            }
+
+            function handleUI() {
+                rebuild(typeUI.value, parseInt(binUI.value));
+            }
+
+            var typeUI = document.getElementById('vis-type');
+            var binUI = document.getElementById('bin-size');
+            [].forEach.call(document.getElementsByClassName('ui'), function(el) {
+                el.addEventListener('change', handleUI);
+            });
+            window.addEventListener('resize', handleUI);
+
+            handleUI()
         </script>
     </body>
 </html>

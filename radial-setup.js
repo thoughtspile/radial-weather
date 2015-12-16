@@ -89,7 +89,7 @@ donuts.baseMethods = {
         return d3.svg.line.radial()
             .angle(function(pt) { return ang(pt.time); })
             .radius(function(pt) { return r(pt.temp); })
-            .interpolate('basis');
+            .interpolate('basis-closed');
             // .interpolate(movingAvg(4));
     },
 

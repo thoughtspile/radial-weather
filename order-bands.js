@@ -11,7 +11,7 @@ donuts.ringOrders = function() {
         // this is useful
         // return r(pt.temp.length > i? pt.temp[i]: _.last(pt.temp));
 
-        var layers = d3.select(this).selectAll('g')
+        d3.select(this).selectAll('g')
             .data(data)
             .enter()
                 .append('g')

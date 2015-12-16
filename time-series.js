@@ -1,5 +1,11 @@
 var period = 365 * 24 * 3600000;
+var oneDay = 1000 * 60 * 60 * 24;
 var leapPrefix = '2012-';
+var months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    .reduce(function(acc, days) {
+        acc.push(_.last(acc) + days);
+        return acc;
+    }, [0]);
 
 
 var unnest = function(rec) {
@@ -85,15 +91,38 @@ var sharpSegments = function(data, segFn) {
 };
 
 
-var yearless = d3.nest().key(function(rec) {
-    var mon = rec.time.substr(5, 3);
-    var day = rec.time.substr(8, 2);
-    var sparseDay = 2 * Math.ceil(parseInt(day) / 2);
-    return leapPrefix + mon + day;
-});
+var pad0 = function(str, l) {
+    if (!(str instanceof String))
+        str = String(str);
+    while (str.length < l)
+        str = '0' + str;
+    return str;
+}
+
+var bin = function(i) {
+    return d3.nest().key(function(rec) {
+        var mon = parseInt(rec.time.substr(5, 2));
+        var day = parseInt(rec.time.substr(8, 2));
+        var nDay = months[mon - 1] + day;
+        var sparseNDay = i * Math.floor(nDay / i);
+        var sparseMon = _.findIndex(months, function(days, i) {
+            return months[i + 1] > sparseNDay || i == 12;
+        });
+        var sparseDay = sparseNDay - months[sparseMon] + 1;
+        if (isNaN(sparseDay))
+            console.log(rec, sparseMon, sparseNDay)
+        return leapPrefix +
+            pad0(sparseMon + 1, 2) + '-' +
+            pad0(sparseDay, 2);
+    })
+    .sortKeys(d3.ascending);
+};
+
+var yearless = bin(1);
+
 
 var binMeanDaily = function(data) {
-    return yearless
+    return bin(window.binSize)
         .rollup(function(dayInYrs) {
             return d3.mean(dayInYrs, _.property('temp'));
         })
@@ -102,7 +131,7 @@ var binMeanDaily = function(data) {
 }
 
 var binCatsDaily = function(data, segFn, cats) {
-    data = yearless
+    data = bin(window.binSize)
         .rollup(function(day) {
             var counts = _.countBy(day.map(function(rec) {
                 return segFn(rec.temp);
@@ -118,25 +147,27 @@ var binCatsDaily = function(data, segFn, cats) {
     return cats.map(function(cat) {
         return {
             color: cat,
-            data: data.map(function(rec) {
+            data: _.sortBy(data.map(function(rec) {
                 return {
                     time: rec.key,
                     temp: rec.values[cat]
                 };
-            })
+            }, 'time'))
         };
     });
 }
 
 var binOrderDaily = function(data) {
-    data = yearless
+    data = bin(window.binSize)
         .rollup(function(dayInYrs) {
             return _(dayInYrs).map('temp').sortBy().value();
         })
         .entries(data);
+    data = _.sortBy(data, 'key')
+    console.log(data)
 
     // remove feb 29
-    _.pull(data, _.min(data, 'temp.length'));
+    // _.pull(data, _.min(data, 'temp.length'));
 
     var bandCount = d3.max(data, _.property('values.length'));
 

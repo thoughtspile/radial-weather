@@ -1,9 +1,4 @@
 var monthGrid = function(svg, inner, outer) {
-    var months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        .reduce(function(acc, days) {
-            acc.push(_.last(acc) + days);
-            return acc;
-        }, [0])
     var deg = d3.scale.linear()
         .domain([0, _.last(months)])
         .range([-90, 270]);

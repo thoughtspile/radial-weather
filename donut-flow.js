@@ -10,7 +10,7 @@ donuts.ringFlows = function() {
         factory.globals.tlow = 0;
         factory.globals.thigh = 1;
 
-        svg.selectAll("path")
+        d3.select(this).selectAll("path")
             .data(data.reverse())
             .enter()
                 .append('path')
