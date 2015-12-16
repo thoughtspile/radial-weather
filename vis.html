@@ -41,6 +41,7 @@
         <script src="radial-setup.js" charset="utf-8"></script>
         <script src="msk.json" charset="utf-8"></script>
 
+        <script src="ring.js" charset="utf-8"></script>
         <script src="avg-line.js" charset="utf-8"></script>
         <script src="spiral-cat.js" charset="utf-8"></script>
         <script src="donut-flow.js" charset="utf-8"></script>
@@ -52,11 +53,13 @@
         <script>
             var svg = donutBase('map');
             var outer = Math.min(w, h) / 2;
-            var inner = .8 * outer;
+            var inner = .2 * outer;
             var layout = donuts.ringOrders()
                 .inner(inner).outer(outer);
-            svg.datum(_.sortBy(dailyMean(mskt), 'time'))
-                .call(layout);
+            mskt = dailyMean(mskt);
+            mskt = _.sortBy(mskt, 'time');
+            // mskt = stepMeans(mskt, 7);
+            svg.datum(mskt).call(layout);
             // layout.drawTempGrid(svg);
             monthGrid(svg, inner, outer);
         </script>

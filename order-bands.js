@@ -1,6 +1,6 @@
 donuts.ringOrders = function() {
     var factory = donuts.base(function(data) {
-        var ringFactory = donuts.ringMean()
+        var ringFactory = donuts.ringLine()
             .inner(factory.inner())
             .outer(factory.outer());
         ringFactory.globals.tlow = d3.min(data, _.property('temp'));

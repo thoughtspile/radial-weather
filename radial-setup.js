@@ -78,7 +78,6 @@ donuts.baseMethods = {
     },
     ringLayout: function(data) {
         var ang = normalizeTime(data, 2 * Math.PI);
-        console.log(this)
 
         var tlow = this.globals.tlow || _.min(data, 'temp').temp;
         var thigh = this.globals.thigh || _.max(data, 'temp').temp;
@@ -86,7 +85,6 @@ donuts.baseMethods = {
             .domain([tlow, thigh])
             .range([this.config.inner, this.config.radius]);
         this.r = r;
-        console.log(r.domain())
 
         return d3.svg.line.radial()
             .angle(function(pt) { return ang(pt.time); })

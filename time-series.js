@@ -32,7 +32,7 @@ var movingAvg = function(n) {
 }
 
 var dailyMean = function(data) {
-    return d3.nest()
+    data = d3.nest()
         .key(function(rec) {
             return rec.time.substr(0, 10);
         })
@@ -41,6 +41,7 @@ var dailyMean = function(data) {
         })
         .entries(data)
         .map(unnest);
+    return data;
 }
 
 
@@ -85,7 +86,10 @@ var sharpSegments = function(data, segFn) {
 
 
 var yearless = d3.nest().key(function(rec) {
-    return leapPrefix + rec.time.substr(5, 10);
+    var mon = rec.time.substr(5, 3);
+    var day = rec.time.substr(8, 2);
+    var sparseDay = 2 * Math.ceil(parseInt(day) / 2);
+    return leapPrefix + mon + day;
 });
 
 var binMeanDaily = function(data) {
@@ -144,6 +148,16 @@ var binOrderDaily = function(data) {
                 temp: rec.values[cat]
             };
         });
+    });
+}
+
+
+var stepMeans = function(data, n) {
+    return _.chunk(data, n).map(function(chunk) {
+        return {
+            time: chunk[0].time,
+            temp: d3.mean(chunk, _.property('temp'))
+        };
     });
 }
 
